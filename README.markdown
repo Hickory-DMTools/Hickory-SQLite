@@ -1,5 +1,0 @@
-# Hickory-Sqlite
-
-## Usage
-
-## Installation

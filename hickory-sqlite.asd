@@ -1,7 +1,7 @@
 (defsystem "hickory-sqlite"
   :version "0.1.0"
-  :author ""
-  :license ""
+  :author "Jonas Rodrigues <jxonas@acm.org>"
+  :license "UNLICENSE"
   :depends-on ("cffi")
   :components ((:module "src"
                 :components
@@ -10,8 +10,8 @@
   :in-order-to ((test-op (test-op "hickory-sqlite/tests"))))
 
 (defsystem "hickory-sqlite/tests"
-  :author ""
-  :license ""
+  :author "Jonas Rodrigues <jxonas@acm.org>"
+  :license "UNLICENSE"
   :depends-on ("hickory-sqlite"
                "rove")
   :components ((:module "tests"
