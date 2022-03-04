@@ -1,9 +1,9 @@
-(defpackage hickory-sqlite/tests/main
+(defpackage hickory-sqlite/tests/sqlite
   (:use :cl
-        :hickory-sqlite
+        :sqlite
         :rove))
 
-(in-package :hickory-sqlite/tests/main)
+(in-package :hickory-sqlite/tests/sqlite)
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :hickory-sqlite)' in your Lisp.
 
