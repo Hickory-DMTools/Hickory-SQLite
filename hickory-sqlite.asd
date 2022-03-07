@@ -1,7 +1,7 @@
 (defsystem "hickory-sqlite"
   :description "Another Common Lisp SQLite Interface"
-  :author "Jonas Rodrigues <jxonas@acm.org>"
-  :license "UNLICENSE"
+  :author "Jonas Oliveira Rodrigues <jxonas@acm.org>"
+  :license "MIT"
   :version "0.1.0"
   :depends-on ("cffi")
   :components ((:module "src"
@@ -13,8 +13,8 @@
 
 (defsystem "hickory-sqlite/tests"
   :description "Test system for hickory-sqlite"
-  :author "Jonas Rodrigues <jxonas@acm.org>"
-  :license "UNLICENSE"
+  :author "Jonas Oliveira Rodrigues <jxonas@acm.org>"
+  :license "MIT"
   :depends-on ("hickory-sqlite" "rove")
   :components ((:module "tests"
                 :components
