@@ -11,123 +11,140 @@
 (in-package :%sqlite)
 
 
-(defcenum result-code
-  (:ok           0)    ; successful result
-  (:error        1)    ; generic error
-  (:internal     2)    ; internal logic error in sqlite
-  (:perm         3)    ; access permission denied
-  (:abort        4)    ; callback routine requested an abort
-  (:busy         5)    ; the database file is locked
-  (:locked       6)    ; a table in the database is locked
-  (:nomem        7)    ; a malloc() failed
-  (:readonly     8)    ; attempt to write a readonly database
-  (:interrupt    9)    ; operation terminated by sqlite3_interrupt()
-  (:ioerr       10)    ; some kind of disk i/o error occurred
-  (:corrupt     11)    ; the database disk image is malformed
-  (:notfound    12)    ; unknown opcode in sqlite3_file_control()
-  (:full        13)    ; insertion failed because database is full
-  (:cantopen    14)    ; unable to open the database file
-  (:protocol    15)    ; database lock protocol error
-  (:empty       16)    ; internal use only
-  (:schema      17)    ; the database schema changed
-  (:toobig      18)    ; string or blob exceeds size limit
-  (:constraint  19)    ; abort due to constraint violation
-  (:mismatch    20)    ; data type mismatch
-  (:misuse      21)    ; library used incorrectly
-  (:nolfs       22)    ; uses os features not supported on host
-  (:auth        23)    ; authorization denied
-  (:format      24)    ; not used
-  (:range       25)    ; 2nd parameter to sqlite3_bind out of range
-  (:notadb      26)    ; file opened that is not a database file
-  (:notice      27)    ; notifications from sqlite3_log()
-  (:warning     28)    ; warnings from sqlite3_log()
-  (:row         100)   ; sqlite3_step() has another row ready
-  (:done        101))  ; sqlite3_step() has finished executing
+(in-package :sqlite.ffi)
+
+
+(defmacro define-constants/cenum (name &body codes)
+  `(progn
+     #+nil ;; is it valuable to generate constants as well?
+     ,@(loop :for (key code doc) :in codes
+             :for sym = (alexandria:format-symbol *package* "+~a+" key)
+             :collect `(defconstant ,sym ,code ,doc))
+     (cffi:defcenum ,name
+       ,@(loop :for (key code doc) :in codes
+               :collect (list key code)))))
+
+
+(define-constants/cenum result-code
+  (:ok           0    "Successful result")
+  (:error        1    "Generic error")
+  (:internal     2    "Internal logic error in sqlite")
+  (:perm         3    "Access permission denied")
+  (:abort        4    "Callback routine requested an abort")
+  (:busy         5    "The database file is locked")
+  (:locked       6    "A table in the database is locked")
+  (:nomem        7    "A malloc() failed")
+  (:readonly     8    "Attempt to write a readonly database")
+  (:interrupt    9    "Operation terminated by sqlite3_interrupt()")
+  (:ioerr       10    "Some kind of disk i/o error occurred")
+  (:corrupt     11    "The database disk image is malformed")
+  (:notfound    12    "Unknown opcode in sqlite3_file_control()")
+  (:full        13    "Insertion failed because database is full")
+  (:cantopen    14    "Unable to open the database file")
+  (:protocol    15    "Database lock protocol error")
+  (:empty       16    "Internal use only")
+  (:schema      17    "The database schema changed")
+  (:toobig      18    "String or blob exceeds size limit")
+  (:constraint  19    "Abort due to constraint violation")
+  (:mismatch    20    "Data type mismatch")
+  (:misuse      21    "Library used incorrectly")
+  (:nolfs       22    "Uses os features not supported on host")
+  (:auth        23    "Authorization denied")
+  (:format      24    "Not used")
+  (:range       25    "2nd parameter to sqlite3_bind out of range")
+  (:notadb      26    "File opened that is not a database file")
+  (:notice      27    "Notifications from sqlite3_log()")
+  (:warning     28    "Warnings from sqlite3_log()")
+  (:row         100   "sqlite3_step() has another row ready")
+  (:done        101  "sqlite3_step() has finished executing"))
+
 
 
 (macrolet ((extended-codes (&body codes)
-             `(defcenum extended-result-code
-                ,@(loop :for (extended base i) :in codes
+             `(define-constants/cenum extended-result-code
+                ,@(loop :for (extended base i doc) :in codes
                         :collect (list extended
                                        (logior
                                         (foreign-enum-value 'result-code base)
-                                        (ash i 8)))))))
+                                        (ash i 8))
+                                       doc)))))
   (extended-codes
-   (:error-missing-collseq    :error        1)
-   (:error-retry              :error        2)
-   (:error-snapshot           :error        3)
-   (:ioerr-read               :ioerr        1)
-   (:ioerr-short-read         :ioerr        2)
-   (:ioerr-write              :ioerr        3)
-   (:ioerr-fsync              :ioerr        4)
-   (:ioerr-dir-fsync          :ioerr        5)
-   (:ioerr-truncate           :ioerr        6)
-   (:ioerr-fstat              :ioerr        7)
-   (:ioerr-unlock             :ioerr        8)
-   (:ioerr-rdlock             :ioerr        9)
-   (:ioerr-delete             :ioerr       10)
-   (:ioerr-blocked            :ioerr       11)
-   (:ioerr-nomem              :ioerr       12)
-   (:ioerr-access             :ioerr       13)
-   (:ioerr-checkreservedlock  :ioerr       14)
-   (:ioerr-lock               :ioerr       15)
-   (:ioerr-close              :ioerr       16)
-   (:ioerr-dir-close          :ioerr       17)
-   (:ioerr-shmopen            :ioerr       18)
-   (:ioerr-shmsize            :ioerr       19)
-   (:ioerr-shmlock            :ioerr       20)
-   (:ioerr-shmmap             :ioerr       21)
-   (:ioerr-seek               :ioerr       22)
-   (:ioerr-delete-noent       :ioerr       23)
-   (:ioerr-mmap               :ioerr       24)
-   (:ioerr-gettemppath        :ioerr       25)
-   (:ioerr-convpath           :ioerr       26)
-   (:ioerr-vnode              :ioerr       27)
-   (:ioerr-auth               :ioerr       28)
-   (:ioerr-begin-atomic       :ioerr       29)
-   (:ioerr-commit-atomic      :ioerr       30)
-   (:ioerr-rollback-atomic    :ioerr       31)
-   (:ioerr-data               :ioerr       32)
-   (:ioerr-corruptfs          :ioerr       33)
-   (:locked-sharedcache       :locked       1)
-   (:locked-vtab              :locked       2)
-   (:busy-recovery            :busy         1)
-   (:busy-snapshot            :busy         2)
-   (:busy-timeout             :busy         3)
-   (:cantopen-notempdir       :cantopen     1)
-   (:cantopen-isdir           :cantopen     2)
-   (:cantopen-fullpath        :cantopen     3)
-   (:cantopen-convpath        :cantopen     4)
-   (:cantopen-dirtywal        :cantopen     5)
-   (:cantopen-symlink         :cantopen     6)
-   (:corrupt-vtab             :corrupt      1)
-   (:corrupt-sequence         :corrupt      2)
-   (:corrupt-index            :corrupt      3)
-   (:readonly-recovery        :readonly     1)
-   (:readonly-cantlock        :readonly     2)
-   (:readonly-rollback        :readonly     3)
-   (:readonly-dbmoved         :readonly     4)
-   (:readonly-cantinit        :readonly     5)
-   (:readonly-directory       :readonly     6)
-   (:abort-rollback           :abort        2)
-   (:constraint-check         :constraint   1)
-   (:constraint-commithook    :constraint   2)
-   (:constraint-foreignkey    :constraint   3)
-   (:constraint-function      :constraint   4)
-   (:constraint-notnull       :constraint   5)
-   (:constraint-primarykey    :constraint   6)
-   (:constraint-trigger       :constraint   7)
-   (:constraint-unique        :constraint   8)
-   (:constraint-vtab          :constraint   9)
-   (:constraint-rowid         :constraint  10)
-   (:constraint-pinned        :constraint  11)
-   (:constraint-datatype      :constraint  12)
-   (:notice-recover-wal       :notice       1)
-   (:notice-recover-rollback  :notice       2)
-   (:warning-autoindex        :warning      1)
-   (:auth-user                :auth         1)
-   (:ok-load-permanently      :ok           1)
-   (:ok-symlink               :ok           2)))
+   (:error-missing-collseq    :error        1  "")
+   (:error-retry              :error        2  "")
+   (:error-snapshot           :error        3  "")
+   (:ioerr-read               :ioerr        1  "")
+   (:ioerr-short-read         :ioerr        2  "")
+   (:ioerr-write              :ioerr        3  "")
+   (:ioerr-fsync              :ioerr        4  "")
+   (:ioerr-dir-fsync          :ioerr        5  "")
+   (:ioerr-truncate           :ioerr        6  "")
+   (:ioerr-fstat              :ioerr        7  "")
+   (:ioerr-unlock             :ioerr        8  "")
+   (:ioerr-rdlock             :ioerr        9  "")
+   (:ioerr-delete             :ioerr       10  "")
+   (:ioerr-blocked            :ioerr       11  "")
+   (:ioerr-nomem              :ioerr       12  "")
+   (:ioerr-access             :ioerr       13  "")
+   (:ioerr-checkreservedlock  :ioerr       14  "")
+   (:ioerr-lock               :ioerr       15  "")
+   (:ioerr-close              :ioerr       16  "")
+   (:ioerr-dir-close          :ioerr       17  "")
+   (:ioerr-shmopen            :ioerr       18  "")
+   (:ioerr-shmsize            :ioerr       19  "")
+   (:ioerr-shmlock            :ioerr       20  "")
+   (:ioerr-shmmap             :ioerr       21  "")
+   (:ioerr-seek               :ioerr       22  "")
+   (:ioerr-delete-noent       :ioerr       23  "")
+   (:ioerr-mmap               :ioerr       24  "")
+   (:ioerr-gettemppath        :ioerr       25  "")
+   (:ioerr-convpath           :ioerr       26  "")
+   (:ioerr-vnode              :ioerr       27  "")
+   (:ioerr-auth               :ioerr       28  "")
+   (:ioerr-begin-atomic       :ioerr       29  "")
+   (:ioerr-commit-atomic      :ioerr       30  "")
+   (:ioerr-rollback-atomic    :ioerr       31  "")
+   (:ioerr-data               :ioerr       32  "")
+   (:ioerr-corruptfs          :ioerr       33  "")
+   (:locked-sharedcache       :locked       1  "")
+   (:locked-vtab              :locked       2  "")
+   (:busy-recovery            :busy         1  "")
+   (:busy-snapshot            :busy         2  "")
+   (:busy-timeout             :busy         3  "")
+   (:cantopen-notempdir       :cantopen     1  "")
+   (:cantopen-isdir           :cantopen     2  "")
+   (:cantopen-fullpath        :cantopen     3  "")
+   (:cantopen-convpath        :cantopen     4  "")
+   (:cantopen-dirtywal        :cantopen     5  "")
+   (:cantopen-symlink         :cantopen     6  "")
+   (:corrupt-vtab             :corrupt      1  "")
+   (:corrupt-sequence         :corrupt      2  "")
+   (:corrupt-index            :corrupt      3  "")
+   (:readonly-recovery        :readonly     1  "")
+   (:readonly-cantlock        :readonly     2  "")
+   (:readonly-rollback        :readonly     3  "")
+   (:readonly-dbmoved         :readonly     4  "")
+   (:readonly-cantinit        :readonly     5  "")
+   (:readonly-directory       :readonly     6  "")
+   (:abort-rollback           :abort        2  "")
+   (:constraint-check         :constraint   1  "")
+   (:constraint-commithook    :constraint   2  "")
+   (:constraint-foreignkey    :constraint   3  "")
+   (:constraint-function      :constraint   4  "")
+   (:constraint-notnull       :constraint   5  "")
+   (:constraint-primarykey    :constraint   6  "")
+   (:constraint-trigger       :constraint   7  "")
+   (:constraint-unique        :constraint   8  "")
+   (:constraint-vtab          :constraint   9  "")
+   (:constraint-rowid         :constraint  10  "")
+   (:constraint-pinned        :constraint  11  "")
+   (:constraint-datatype      :constraint  12  "")
+   (:notice-recover-wal       :notice       1  "")
+   (:notice-recover-rollback  :notice       2  "")
+   (:warning-autoindex        :warning      1  "")
+   (:auth-user                :auth         1  "")
+   (:ok-load-permanently      :ok           1  "")
+   (:ok-symlink               :ok           2  "")))
+
 
 
 (defcstruct sqlite3)
