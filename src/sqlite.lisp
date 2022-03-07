@@ -1,4 +1,4 @@
-(cl:defpackage sqlite
+(defpackage sqlite
   (:use :cl :alexandria)
   (:export #:sqlite-connection
            #:connect
@@ -9,14 +9,16 @@
 (in-package :sqlite)
 
 
-(cffi:define-foreign-library %sqlite
-  (:darwin (:default "libsqlite3"))
-  (:unix (:or "libsqlite3.so" "libsqlite3.so"))
-  (t (:or (:default "libsqlite3")
-          (:default "sqlite3"))))
+(cffi:define-foreign-library libsqlite
+    (t (:or (:default "libsqlite3")
+            (:default "sqlite3"))))
 
 
-(cffi:use-foreign-library %sqlite)
+;; load custom library if provided.
+(let ((custom (uiop:getenv "HICKORY_SQLITE_LIBRARY")))
+  (if custom
+      (cffi:load-foreign-library custom)
+      (cffi:use-foreign-library libsqlite)))
 
 
 ;;; Singleton to reduce consing.
@@ -26,12 +28,12 @@
 
 (defmacro %vfs-slot (ptr name)
   `(cffi:foreign-slot-value
-    ,ptr '(:struct %sqlite:sqlite3-vfs)
-    ',(ensure-symbol name :%sqlite)))
+    ,ptr '(:struct sqlite.ffi:sqlite3-vfs)
+    ',(ensure-symbol name :sqlite.ffi)))
 
 
 (defun default-vfs-name ()
-  (let ((ptr (%sqlite:sqlite3-vfs-find +null-pointer+)))
+  (let ((ptr (sqlite.ffi:sqlite3-vfs-find +null-pointer+)))
     (if (cffi:null-pointer-p ptr)
         (error "Should not be null!!!")
         (%vfs-slot ptr name))))
@@ -45,12 +47,12 @@
 
 
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
-  (cffi:with-foreign-object (handle-ptr '(:pointer %sqlite:*sqlite3))
+  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite.ffi:*sqlite3))
     (with-slots (filename flags vfs handle) object
       (let* ((vfs-name (or vfs (default-vfs-name)))
-             (result-code (%sqlite:sqlite3-open-v2 filename handle-ptr flags vfs-name)))
+             (result-code (sqlite.ffi:sqlite3-open-v2 filename handle-ptr flags vfs-name)))
         (if (eq result-code :ok)
-            (setf handle (cffi:mem-ref handle-ptr '(:pointer %sqlite:*sqlite3))
+            (setf handle (cffi:mem-ref handle-ptr '(:pointer sqlite.ffi:*sqlite3))
                   vfs vfs-name)
             (error result-code))))))
 
@@ -62,7 +64,7 @@
 
 (defun disconnect (conn)
   (with-slots (handle) conn
-    (%sqlite:sqlite3-close handle)))
+    (sqlite.ffi:sqlite3-close handle)))
 
 
 (defmacro with-connection ((name path) &body body)

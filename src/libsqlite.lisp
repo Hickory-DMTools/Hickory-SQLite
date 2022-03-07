@@ -1,4 +1,4 @@
-(defpackage :%sqlite
+(defpackage :sqlite.ffi
   (:use :cl :cffi)
   (:export #:sqlite3
            #:*sqlite3
@@ -7,9 +7,6 @@
            #:sqlite3-close
            #:sqlite3-vfs-find
            #:name))
-
-(in-package :%sqlite)
-
 
 (in-package :sqlite.ffi)
 
@@ -146,10 +143,198 @@
    (:ok-symlink               :ok           2  "")))
 
 
+(defcfun sqlite3-libversion :string)
+
+(defcfun sqlite3-sourceid :string)
+
+(defcfun sqlite3-libversion-number :int)
+
+
+;;; sqlite3 - Database Connection Handle
 
 (defcstruct sqlite3)
+
 (defctype *sqlite3 (:pointer (:struct sqlite3)))
 
+(defcfun sqlite3-busy-timeout result-code
+  (db *sqlite3)
+  (ms :int))
+
+
+(defcfun sqlite3-changes :int
+  (db *sqlite3))
+
+
+(defcfun sqlite3-changes64 :int64
+  (db *sqlite3))
+
+
+;; Constructors: sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
+;; Destructors: sqlite3_close(), sqlite3_close_v2()
+;; Methods:
+;;  - TODO sqlite3_autovacuum_pages
+;;  - TODO sqlite3_blob_open
+;;  - TODO sqlite3_busy_handler
+;;  - TODO sqlite3_busy_timeout
+;;  - TODO sqlite3_changes
+;;  - TODO sqlite3_changes64
+;;  - TODO sqlite3_collation_needed
+;;  - TODO sqlite3_collation_needed16
+;;  - TODO sqlite3_commit_hook
+;;  - TODO sqlite3_create_collation
+;;  - TODO sqlite3_create_collation16
+;;  - TODO sqlite3_create_collation_v2
+;;  - TODO sqlite3_create_function
+;;  - TODO sqlite3_create_function16
+;;  - TODO sqlite3_create_function_v2
+;;  - TODO sqlite3_create_module
+;;  - TODO sqlite3_create_module_v2
+;;  - TODO sqlite3_create_window_function
+;;  - TODO sqlite3_db_cacheflush
+;;  - TODO sqlite3_db_config
+;;  - TODO sqlite3_db_filename
+;;  - TODO sqlite3_db_mutex
+;;  - TODO sqlite3_db_readonly
+;;  - TODO sqlite3_db_release_memory
+;;  - TODO sqlite3_db_status
+;;  - TODO sqlite3_drop_modules
+;;  - TODO sqlite3_enable_load_extension
+;;  - TODO sqlite3_errcode
+;;  - TODO sqlite3_errmsg
+;;  - TODO sqlite3_errmsg16
+;;  - TODO sqlite3_error_offset
+;;  - TODO sqlite3_errstr
+;;  - TODO sqlite3_exec
+;;  - TODO sqlite3_extended_errcode
+;;  - TODO sqlite3_extended_result_codes
+;;  - TODO sqlite3_file_control
+;;  - TODO sqlite3_free_table
+;;  - TODO sqlite3_get_autocommit
+;;  - TODO sqlite3_get_table
+;;  - TODO sqlite3_interrupt
+;;  - TODO sqlite3_last_insert_rowid
+;;  - TODO sqlite3_limit
+;;  - TODO sqlite3_load_extension
+;;  - TODO sqlite3_next_stmt
+;;  - TODO sqlite3_overload_function
+;;  - TODO sqlite3_prepare
+;;  - TODO sqlite3_prepare16
+;;  - TODO sqlite3_prepare16_v2
+;;  - TODO sqlite3_prepare16_v3
+;;  - TODO sqlite3_prepare_v2
+;;  - TODO sqlite3_prepare_v3
+;;  - TODO sqlite3_preupdate_blobwrite
+;;  - TODO sqlite3_preupdate_count
+;;  - TODO sqlite3_preupdate_depth
+;;  - TODO sqlite3_preupdate_hook
+;;  - TODO sqlite3_preupdate_new
+;;  - TODO sqlite3_preupdate_old
+;;  - TODO sqlite3_profile
+;;  - TODO sqlite3_progress_handler
+;;  - TODO sqlite3_rollback_hook
+;;  - TODO sqlite3_set_authorizer
+;;  - TODO sqlite3_set_last_insert_rowid
+;;  - TODO sqlite3_system_errno
+;;  - TODO sqlite3_table_column_metadata
+;;  - TODO sqlite3_total_changes
+;;  - TODO sqlite3_total_changes64
+;;  - TODO sqlite3_trace
+;;  - TODO sqlite3_trace_v2
+;;  - TODO sqlite3_txn_state
+;;  - TODO sqlite3_unlock_notify
+;;  - TODO sqlite3_update_hook
+;;  - TODO sqlite3_wal_autocheckpoint
+;;  - TODO sqlite3_wal_checkpoint
+;;  - TODO sqlite3_wal_checkpoint_v2
+;;  - TODO sqlite3_wal_hook
+
+
+;;; sqlite3_stmt - Prepared Statement Object
+
+(defcstruct sqlite3-stmt)
+(defctype *sqlite3-stmt (:pointer (:struct sqlite3-stmt)))
+
+
+;; Constructors: sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
+;; Destructors:  sqlite3_close(), sqlite3_close_v2()
+;; Methods:
+;;  - TODO sqlite3_autovacuum_pages
+;;  - TODO sqlite3_blob_open
+;;  - TODO sqlite3_busy_handler
+;;  - TODO sqlite3_changes
+;;  - TODO sqlite3_changes64
+;;  - TODO sqlite3_collation_needed
+;;  - TODO sqlite3_collation_needed16
+;;  - TODO sqlite3_commit_hook
+;;  - TODO sqlite3_create_collation
+;;  - TODO sqlite3_create_collation16
+;;  - TODO sqlite3_create_collation_v2
+;;  - TODO sqlite3_create_function
+;;  - TODO sqlite3_create_function16
+;;  - TODO sqlite3_create_function_v2
+;;  - TODO sqlite3_create_module
+;;  - TODO sqlite3_create_module_v2
+;;  - TODO sqlite3_create_window_function
+;;  - TODO sqlite3_db_cacheflush
+;;  - TODO sqlite3_db_config
+;;  - TODO sqlite3_db_filename
+;;  - TODO sqlite3_db_mutex
+;;  - TODO sqlite3_db_readonly
+;;  - TODO sqlite3_db_release_memory
+;;  - TODO sqlite3_db_status
+;;  - TODO sqlite3_drop_modules
+;;  - TODO sqlite3_enable_load_extension
+;;  - TODO sqlite3_errcode
+;;  - TODO sqlite3_errmsg
+;;  - TODO sqlite3_errmsg16
+;;  - TODO sqlite3_error_offset
+;;  - TODO sqlite3_errstr
+;;  - TODO sqlite3_exec
+;;  - TODO sqlite3_extended_errcode
+;;  - TODO sqlite3_extended_result_codes
+;;  - TODO sqlite3_file_control
+;;  - TODO sqlite3_free_table
+;;  - TODO sqlite3_get_autocommit
+;;  - TODO sqlite3_get_table
+;;  - TODO sqlite3_interrupt
+;;  - TODO sqlite3_last_insert_rowid
+;;  - TODO sqlite3_limit
+;;  - TODO sqlite3_load_extension
+;;  - TODO sqlite3_next_stmt
+;;  - TODO sqlite3_overload_function
+;;  - TODO sqlite3_prepare
+;;  - TODO sqlite3_prepare16
+;;  - TODO sqlite3_prepare16_v2
+;;  - TODO sqlite3_prepare16_v3
+;;  - TODO sqlite3_prepare_v2
+;;  - TODO sqlite3_prepare_v3
+;;  - TODO sqlite3_preupdate_blobwrite
+;;  - TODO sqlite3_preupdate_count
+;;  - TODO sqlite3_preupdate_depth
+;;  - TODO sqlite3_preupdate_hook
+;;  - TODO sqlite3_preupdate_new
+;;  - TODO sqlite3_preupdate_old
+;;  - TODO sqlite3_profile
+;;  - TODO sqlite3_progress_handler
+;;  - TODO sqlite3_rollback_hook
+;;  - TODO sqlite3_set_authorizer
+;;  - TODO sqlite3_set_last_insert_rowid
+;;  - TODO sqlite3_system_errno
+;;  - TODO sqlite3_table_column_metadata
+;;  - TODO sqlite3_total_changes
+;;  - TODO sqlite3_total_changes64
+;;  - TODO sqlite3_trace
+;;  - TODO sqlite3_trace_v2
+;;  - TODO sqlite3_txn_state
+;;  - TODO sqlite3_unlock_notify
+;;  - TODO sqlite3_update_hook
+;;  - TODO sqlite3_wal_autocheckpoint
+;;  - TODO sqlite3_wal_checkpoint
+;;  - TODO sqlite3_wal_checkpoint_v2
+;;  - TODO sqlite3_wal_hook
+
+
+;;; TODO sqlite3_open()
 
 (defbitfield open-flags
   (:readonly         #x00000001)  ;  ok for sqlite3_open_v2()
@@ -176,13 +361,6 @@
   (:exrescode        #x02000000)) ;  extended result codes
 
 
-(defcfun sqlite3-libversion :string)
-
-(defcfun sqlite3-sourceid :string)
-
-(defcfun sqlite3-libversion-number :int)
-
-
 (defcfun sqlite3-open-v2 result-code
   (filename :string)
   (db (:pointer *sqlite3))
@@ -190,17 +368,45 @@
   (vfs :string))
 
 
+
+
+;;; TODO sqlite3_prepare()
+
+
+;;; TODO sqlite3_bind()
+
+
+;;; TODO sqlite3_step()
+
+
+;;; TODO sqlite3_column()
+
+;; - TODO sqlite3_column_blob
+;; - TODO sqlite3_column_double
+;; - TODO sqlite3_column_int
+;; - TODO sqlite3_column_int64
+;; - TODO sqlite3_column_text
+;; - TODO sqlite3_column_text16
+;; - TODO sqlite3_column_value
+;; - TODO sqlite3_column_bytes
+;; - TODO sqlite3_column_bytes16
+;; - TODO sqlite3_column_type
+
+;;; TODO sqlite3_finalize()
+
+
+;;; TODO sqlite3_close()
+
 (defcfun sqlite3-close result-code
   (db *sqlite3))
 
 
-(defcfun sqlite3-busy-timeout result-code
-  (db *sqlite3)
-  (ms :int))
+;;; TODO sqlite3_exec()
 
 
-(defcstruct sqlite3-stmt)
-(defctype *sqlite3-stmt (:pointer (:struct sqlite3-stmt)))
+
+
+
 
 
 (defcstruct sqlite3-vfs
