@@ -6,7 +6,7 @@
   :depends-on ("cffi")
   :components ((:module "src"
                 :components
-                ((:file "libsqlite")
+                ((:file "sqlite-ffi")
                  (:file "sqlite"))))
   :in-order-to ((test-op (test-op "hickory-sqlite/tests"))))
 

@@ -28,12 +28,12 @@
 
 (defmacro %vfs-slot (ptr name)
   `(cffi:foreign-slot-value
-    ,ptr '(:struct sqlite.ffi:sqlite3-vfs)
-    ',(ensure-symbol name :sqlite.ffi)))
+    ,ptr '(:struct sqlite-ffi:sqlite3-vfs)
+    ',(ensure-symbol name :sqlite-ffi)))
 
 
 (defun default-vfs-name ()
-  (let ((ptr (sqlite.ffi:sqlite3-vfs-find +null-pointer+)))
+  (let ((ptr (sqlite-ffi:sqlite3-vfs-find +null-pointer+)))
     (if (cffi:null-pointer-p ptr)
         (error "Should not be null!!!")
         (%vfs-slot ptr name))))
@@ -47,13 +47,27 @@
 
 
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
-  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite.ffi:*sqlite3))
+  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite-ffi:*sqlite3))
     (with-slots (filename flags vfs handle) object
       (let* ((vfs-name (or vfs (default-vfs-name)))
-             (result-code (sqlite.ffi:sqlite3-open-v2 filename handle-ptr flags vfs-name)))
+             (result-code (sqlite-ffi:sqlite3-open-v2 filename handle-ptr flags vfs-name)))
         (if (eq result-code :ok)
-            (setf handle (cffi:mem-ref handle-ptr '(:pointer sqlite.ffi:*sqlite3))
+            (setf handle (cffi:mem-ref handle-ptr '(:pointer sqlite-ffi:*sqlite3))
                   vfs vfs-name)
+            (error result-code))))))
+
+
+(defmacro with-connection-handle ((name conn) &body body)
+  `(with-slots ((,name handle)) ,conn
+     ,@body))
+
+
+(defun prepare (conn sql)
+  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite-ffi:*sqlite3-stmt))
+    (with-connection-handle (db conn)
+      (let ((result-code (sqlite-ffi:sqlite3-prepare-v2 db sql -1 handle-ptr +null-pointer+)))
+        (if (eq result-code :ok)
+            (cffi:mem-ref handle-ptr '(:pointer sqlite-ffi:*sqlite3-stmt))
             (error result-code))))))
 
 
@@ -64,7 +78,7 @@
 
 (defun disconnect (conn)
   (with-slots (handle) conn
-    (sqlite.ffi:sqlite3-close handle)))
+    (sqlite-ffi:sqlite3-close handle)))
 
 
 (defmacro with-connection ((name path) &body body)
@@ -74,6 +88,3 @@
        (disconnect ,name))))
 
 
-(defmacro with-connection-handle ((name conn) &body body)
-  `(with-slots ((,name handle)) ,conn
-     ,@body))

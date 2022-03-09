@@ -1,4 +1,4 @@
-(defpackage :sqlite.ffi
+(defpackage :sqlite-ffi
   (:use :cl :cffi)
   (:export #:sqlite3
            #:*sqlite3
@@ -6,14 +6,16 @@
            #:sqlite3-open-v2
            #:sqlite3-close
            #:sqlite3-vfs-find
+           #:sqlite3-stmt
+           #:*sqlite3-stmt
+           #:sqlite3-prepare-v2
            #:name))
 
-(in-package :sqlite.ffi)
+(in-package :sqlite-ffi)
 
 
 (defmacro define-constants/cenum (name &body codes)
   `(progn
-     #+nil ;; is it valuable to generate constants as well?
      ,@(loop :for (key code doc) :in codes
              :for sym = (alexandria:format-symbol *package* "+~a+" key)
              :collect `(defconstant ,sym ,code ,doc))
@@ -160,10 +162,8 @@
   (db *sqlite3)
   (ms :int))
 
-
 (defcfun sqlite3-changes :int
   (db *sqlite3))
-
 
 (defcfun sqlite3-changes64 :int64
   (db *sqlite3))
@@ -254,6 +254,12 @@
 (defcstruct sqlite3-stmt)
 (defctype *sqlite3-stmt (:pointer (:struct sqlite3-stmt)))
 
+(defcfun sqlite3-prepare-v2 result-code
+  (db *sqlite3)
+  (sql :string)
+  (bytes :int)
+  (handle-ptr (:pointer *sqlite3-stmt))
+  (tail :pointer))
 
 ;; Constructors: sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
 ;; Destructors:  sqlite3_close(), sqlite3_close_v2()
@@ -361,6 +367,11 @@
   (:exrescode        #x02000000)) ;  extended result codes
 
 
+(defcfun sqlite3-open result-code
+  (filename :string)
+  (db (:pointer *sqlite3)))
+
+
 (defcfun sqlite3-open-v2 result-code
   (filename :string)
   (db (:pointer *sqlite3))
@@ -368,6 +379,20 @@
   (vfs :string))
 
 
+(defcfun sqlite3-errcode :int
+  (db *sqlite3))
+
+
+(defcfun sqlite3-extended-errcode :int
+  (db *sqlite3))
+
+
+(defcfun sqlite3-errmsg :string
+  (db *sqlite3))
+
+
+(defcfun sqlite3-errstr :string
+  (code :int))
 
 
 ;;; TODO sqlite3_prepare()
@@ -379,7 +404,93 @@
 ;;; TODO sqlite3_step()
 
 
+(defcfun sqlite3-step result-code
+  (stmt *sqlite3-stmt))
+
+
 ;;; TODO sqlite3_column()
+
+
+#+nil(define-constants/cenum datatype
+       (:integer 1 "integer")
+       (:float 2 "float")
+       (:text 3 "text")
+       (:blob 4 "blob")
+       (:null 5 "null"))
+
+
+
+(defun code->keyword (code)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (type (integer 1 5) code))
+  (aref #(:integer :double :text :blob :null) (1- code)))
+
+
+(defun keyword->code (keyword)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (ecase keyword
+    (:integer 1)
+    (:float 2)
+    (:text 3)
+    (:blob 4)
+    (:null 5)))
+
+
+(define-foreign-type datatype ()
+  ()
+  (:actual-type :int)
+  (:simple-parser datatype))
+
+
+(defmethod expand-to-foreign (value (type datatype))
+  `(keyword->code ,value))
+
+(defmethod expand-from-foreign (value (type datatype))
+  `(code->keyword ,value))
+
+
+(defcfun sqlite3-column-type :int
+  (stmt *sqlite3-stmt)
+  (i-column :int))
+
+(defcfun sqlite3-column-text :string
+  (stmt *sqlite3-stmt)
+  (i-column :int))
+
+(defcfun sqlite3-column-int :int
+  (stmt *sqlite3-stmt)
+  (i-column :int))
+
+(defcfun sqlite3-column-int64 :int64
+  (stmt *sqlite3-stmt)
+  (i-column :int))
+
+(defcfun sqlite3-column-double :double
+  (stmt *sqlite3-stmt)
+  (i-column :int))
+
+
+(declaim (inline %statement-value))
+(defun %statement-value (stmt i)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (ecase (sqlite3-column-type stmt i)
+    (1 (sqlite3-column-int stmt i))
+    (2 (sqlite3-column-double stmt i))
+    (3 (sqlite3-column-text stmt i))
+    (4 nil)
+    (5 nil)))
+
+
+(defmacro statement-value (stmt i &optional (cast nil cast-p))
+  (if cast-p
+      (ecase cast
+        (:integer `(sqlite3-column-int ,stmt ,i))
+        (:double `(sqlite3-column-double ,stmt ,i))
+        (:text `(sqlite3-column-text ,stmt ,i))
+        (:blob nil)
+        (:null nil))
+      `(%statement-value ,stmt ,i)))
+
 
 ;; - TODO sqlite3_column_blob
 ;; - TODO sqlite3_column_double
@@ -395,6 +506,9 @@
 ;;; TODO sqlite3_finalize()
 
 
+(defcfun sqlite3-finalize result-code
+  (stmt *sqlite3-stmt))
+
 ;;; TODO sqlite3_close()
 
 (defcfun sqlite3-close result-code
@@ -402,11 +516,6 @@
 
 
 ;;; TODO sqlite3_exec()
-
-
-
-
-
 
 
 (defcstruct sqlite3-vfs
