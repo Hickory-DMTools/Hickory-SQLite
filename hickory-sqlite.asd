@@ -4,6 +4,10 @@
   :author "Jonas Oliveira Rodrigues <jxonas@acm.org>"
   :license "MIT"
   :depends-on ("hickory-sqlite-bindings")
+  :components ((:module "src"
+                :components
+                ((:file "helper")
+                 (:file "sqlite"))))
   :in-order-to ((test-op (test-op "hickory-sqlite/tests"))))
 
 

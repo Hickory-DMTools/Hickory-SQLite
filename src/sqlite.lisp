@@ -1,5 +1,10 @@
-(defpackage sqlite
+(defpackage :sqlite
   (:use :cl :alexandria)
+  (:import-from #:%sqlite
+                #:*sqlite3
+                #:*stmt
+                #:column-value
+                #:+null-pointer+)
   (:export #:sqlite-connection
            #:connect
            #:disconnect
@@ -10,8 +15,8 @@
 
 
 (cffi:define-foreign-library libsqlite
-    (t (:or (:default "libsqlite3")
-            (:default "sqlite3"))))
+  (t (:or (:default "libsqlite3")
+          (:default "sqlite3"))))
 
 
 ;; load custom library if provided.
@@ -21,22 +26,11 @@
       (cffi:use-foreign-library libsqlite)))
 
 
-;;; Singleton to reduce consing.
-(define-constant +null-pointer+ (cffi:null-pointer)
-  :test #'cffi:pointer-eq)
-
-
-(defmacro %vfs-slot (ptr name)
-  `(cffi:foreign-slot-value
-    ,ptr '(:struct sqlite-ffi:sqlite3-vfs)
-    ',(ensure-symbol name :sqlite-ffi)))
-
-
 (defun default-vfs-name ()
-  (let ((ptr (sqlite-ffi:sqlite3-vfs-find +null-pointer+)))
+  (let ((ptr (%sqlite:vfs-find +null-pointer+)))
     (if (cffi:null-pointer-p ptr)
         (error "Should not be null!!!")
-        (%vfs-slot ptr name))))
+        (%sqlite:vfs-slot ptr z-name))))
 
 
 (defclass sqlite-connection ()
@@ -46,13 +40,21 @@
    (handle :initarg nil)))
 
 
+(defmacro with-ok (expr &body body)
+  (with-gensyms (g!code)
+    `(let ((,g!code ,expr))
+       (if (eq ,g!code %sqlite:+ok+)
+           (progn ,@body)
+           (error ,g!code)))))
+
+
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
-  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite-ffi:*sqlite3))
+  (cffi:with-foreign-object (handle-ptr '(:pointer *sqlite3))
     (with-slots (filename flags vfs handle) object
       (let* ((vfs-name (or vfs (default-vfs-name)))
-             (result-code (sqlite-ffi:sqlite3-open-v2 filename handle-ptr flags vfs-name)))
-        (if (eq result-code :ok)
-            (setf handle (cffi:mem-ref handle-ptr '(:pointer sqlite-ffi:*sqlite3))
+             (result-code (%sqlite:open filename handle-ptr))) ;; FIXME: use open-v2
+        (if (eq result-code %sqlite:+ok+)
+            (setf handle (cffi:mem-ref handle-ptr '(:pointer *sqlite3))
                   vfs vfs-name)
             (error result-code))))))
 
@@ -63,12 +65,10 @@
 
 
 (defun prepare (conn sql)
-  (cffi:with-foreign-object (handle-ptr '(:pointer sqlite-ffi:*sqlite3-stmt))
+  (cffi:with-foreign-object (handle-ptr '(:pointer *stmt))
     (with-connection-handle (db conn)
-      (let ((result-code (sqlite-ffi:sqlite3-prepare-v2 db sql -1 handle-ptr +null-pointer+)))
-        (if (eq result-code :ok)
-            (cffi:mem-ref handle-ptr '(:pointer sqlite-ffi:*sqlite3-stmt))
-            (error result-code))))))
+      (with-ok (%sqlite:prepare-v2 db sql -1 handle-ptr +null-pointer+)
+        (cffi:mem-ref handle-ptr '(:pointer *stmt))))))
 
 
 (defun connect (&key (filename ":memory:") (flags '(:readwrite :create)) (vfs nil))
@@ -78,7 +78,8 @@
 
 (defun disconnect (conn)
   (with-slots (handle) conn
-    (sqlite-ffi:sqlite3-close handle)))
+    (%sqlite:extended-code->keyword
+     (%sqlite:close handle))))
 
 
 (defmacro with-connection ((name path) &body body)
