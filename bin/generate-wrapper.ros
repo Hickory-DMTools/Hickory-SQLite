@@ -1,0 +1,20 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(ros:ensure-asdf)
+(ql:quickload '("hickory-sqlite/wrapper") :silent t)
+
+(defpackage :ros.script.generate-hickory-sqlite-wrapper
+  (:use :cl))
+
+(in-package :ros.script.generate-hickory-sqlite-wrapper)
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (cffi:load-foreign-library '(:default "libresect"))
+  (format t "~a~%" (claw:generate-wrapper "hickory-sqlite")))
+
+;;; vim: set ft=lisp lisp:
