@@ -1,5 +1,5 @@
 (defpackage :sqlite
-  (:use :cl :alexandria)
+  (:use :cl)
   (:import-from #:%sqlite
                 #:*sqlite3
                 #:*stmt
@@ -41,7 +41,7 @@
 
 
 (defmacro with-ok (expr &body body)
-  (with-gensyms (g!code)
+  (alexandria:with-gensyms (g!code)
     `(let ((,g!code ,expr))
        (if (eq ,g!code %sqlite:+ok+)
            (progn ,@body)
@@ -78,7 +78,7 @@
 
 (defun disconnect (conn)
   (with-slots (handle) conn
-    (%sqlite:extended-code->keyword
+    (%sqlite:result-code->keyword
      (%sqlite:close handle))))
 
 

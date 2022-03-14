@@ -12,6 +12,9 @@
                             ((:and :x86-64 :darwin) "x86_64-apple-darwin-gnu"))
                   (:include-extra-values)
                   (:include-definitions "^SQLITE\\w+" "^sqlite3_\\w+")
+                  (:exclude-definitions
+                   ;; will be manually created in supplement.lisp
+                   "^sqlite3_column_text$")
                   (:persistent t :depends-on ()))
   :in-package :%sqlite
   :recognize-strings t

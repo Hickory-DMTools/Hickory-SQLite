@@ -1,6 +1,19 @@
 (cl:in-package :hickory-sqlite-bindings~pristine)
 
 
+;; Manually create some omitted definitions in claw.lisp
+
+(cffi:defcfun ("sqlite3_column_text" %sqlite::column-text)
+    :string
+  (%sqlite::arg0 (:pointer %sqlite::stmt))
+  (%sqlite::i-col :int))
+
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  (export '%sqlite::column-text :%sqlite))
+
+
+;; Additional useful definitions
+
 (cffi:defcenum %sqlite::result-code
   (:ok         #.%sqlite:+ok+)
   (:error      #.%sqlite:+error+)
@@ -126,37 +139,29 @@
   (cffi:foreign-enum-value '%sqlite::extended-code keyword))
 
 
+(declaim (inline %sqlite::%statement-value))
 
-(declaim (inline %sqlite::%text))
-
-(defun %sqlite::%text (stmt i)
-  (cffi:foreign-string-to-lisp
-   (%sqlite:column-text stmt i)))
-
-
-(declaim (inline %sqlite::%column-value))
-
-(defun %sqlite::%column-value (stmt i)
+(defun %sqlite::%statement-value (stmt i)
   (ecase (%sqlite:column-type stmt i)
     (#.%sqlite:+integer+ (%sqlite:column-int stmt i))
     (#.%sqlite:+float+ (%sqlite:column-double stmt i))
-    (#.%sqlite:+text+ (%sqlite::%text stmt i))
+    (#.%sqlite:+text+ (%sqlite:column-text stmt i))
     (#.%sqlite:+blob+ (%sqlite:column-blob stmt i))
     (#.%sqlite:+null+ nil)))
 
 
-(defun %sqlite::column-value (stmt i &optional cast)
+(defun %sqlite::statement-value (stmt i &optional cast)
   (if (not cast)
-      (%sqlite::%column-value stmt i)
+      (%sqlite::%statement-value stmt i)
       (ecase cast
         (:integer (%sqlite:column-int stmt i))
         (:float (%sqlite:column-double stmt i))
-        (:text (%sqlite::%text stmt i))
+        (:text (%sqlite:column-text stmt i))
         (:blob (%sqlite:column-blob stmt i))
         (:null nil))))
 
 
-(define-compiler-macro %sqlite::column-value (&whole whole stmt i &optional cast)
+(define-compiler-macro %sqlite::statement-value (&whole whole stmt i &optional cast)
   (if (not cast)
       whole
       (ecase cast
@@ -189,7 +194,7 @@
   (export '%sqlite::keyword->result-code :%sqlite)
   (export '%sqlite::extended-code->keyword :%sqlite)
   (export '%sqlite::keyword->extended-code :%sqlite)
-  (export '%sqlite::column-value :%sqlite)
+  (export '%sqlite::statement-value :%sqlite)
   (export '%sqlite::*sqlite3 :%sqlite)
   (export '%sqlite::*stmt :%sqlite)
   (export '%sqlite::+null-pointer+ :%sqlite)
