@@ -38,7 +38,7 @@
     `(let ((,g!code ,expr))
        (if (eq ,g!code %sqlite3:+ok+)
            (progn ,@body)
-           (error ,g!code)))))
+           (error (%sqlite3:errstr ,g!code))))))
 
 
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
@@ -48,7 +48,7 @@
              (result-code (%sqlite3:open-v2 filename handle-ptr flags vfs)))
         (if (eq result-code %sqlite3:+ok+)
             (setf handle (cffi:mem-ref handle-ptr '(:pointer *sqlite3)))
-            (error result-code)))))) ;; FIXME: learn how to use a proper error
+            (error (%sqlite3:errstr result-code))))))) ;; TODO: proper error handling
 
 
 (defmacro with-connection-handle ((name conn) &body body)
