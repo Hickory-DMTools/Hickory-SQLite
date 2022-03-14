@@ -12,6 +12,23 @@
                   (:include-extra-values)
                   (:include-definitions "^SQLITE\\w+" "^sqlite3_\\w+")
                   (:exclude-definitions
+                   ;; not relevant
+                   "^SQLITE_API$"
+                   "^SQLITE_APICALL$"
+                   "^SQLITE_CALLBACK$"
+                   "^SQLITE_CDECL$"
+                   "^SQLITE_DEPRECATED$"
+                   "^SQLITE_EXPERIMENTAL$"
+                   "^SQLITE_EXTERN$"
+                   "^SQLITE_STDCALL$"
+                   "^SQLITE_SYSAPI$"
+                   "^SQLITE3_H$"
+
+                   ;; version has to be dinamically checked
+                   "^SQLITE_VERSION$"
+                   "^SQLITE_VERSION_NUMBER$"
+                   "^SQLITE_SOURCE_ID$"
+
                    ;; manually created in supplement.lisp
                    "^sqlite3_column_text$"
                    "^SQLITE_STATIC$"
