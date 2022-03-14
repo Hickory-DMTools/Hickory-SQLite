@@ -19,7 +19,7 @@
   :depends-on ("alexandria" "uiop" "cffi" "claw-utils" "claw")
   :serial t
   :components ((:file "src/claw")
-               (:module :sqlite-includes :pathname "src/lib/build/")))
+               (:module :sqlite-includes :pathname "src/lib/")))
 
 
 (defsystem "hickory-sqlite/tests"
