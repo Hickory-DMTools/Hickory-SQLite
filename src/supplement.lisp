@@ -3,13 +3,23 @@
 
 ;; Manually create some omitted definitions in claw.lisp
 
+(alexandria:define-constant
+    %sqlite::+static+ (cffi:null-pointer)
+  :test #'cffi:pointer-eq)
+
+(alexandria:define-constant %sqlite::+transient+
+    (cffi:make-pointer (ldb (byte (* 8 (cffi:foreign-type-size :pointer)) 0) -1))
+  :test #'cffi:pointer-eq)
+
 (cffi:defcfun ("sqlite3_column_text" %sqlite::column-text)
     :string
   (%sqlite::arg0 (:pointer %sqlite::stmt))
   (%sqlite::i-col :int))
 
 (eval-when (:load-toplevel :compile-toplevel :execute)
-  (export '%sqlite::column-text :%sqlite))
+  (export '%sqlite::column-text :%sqlite)
+  (export '%sqlite::+static+ :%sqlite)
+  (export '%sqlite::+transient+ :%sqlite))
 
 
 ;; Additional useful definitions

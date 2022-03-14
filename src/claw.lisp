@@ -13,7 +13,9 @@
                   (:include-definitions "^SQLITE\\w+" "^sqlite3_\\w+")
                   (:exclude-definitions
                    ;; manually created in supplement.lisp
-                   "^sqlite3_column_text$")
+                   "^sqlite3_column_text$"
+                   "^SQLITE_STATIC$"
+                   "^SQLITE_TRANSIENT$")
                   (:persistent t :depends-on ()))
   :in-package :%sqlite
   :recognize-strings t
