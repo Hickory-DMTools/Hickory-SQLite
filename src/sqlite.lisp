@@ -1,6 +1,6 @@
-(defpackage :sqlite
+(defpackage :sqlite3
   (:use :cl)
-  (:import-from #:%sqlite
+  (:import-from #:%sqlite3
                 #:*sqlite3
                 #:*stmt
                 #:column-value
@@ -11,7 +11,7 @@
 
            #:default-vfs-name))
 
-(in-package :sqlite)
+(in-package :sqlite3)
 
 
 (cffi:define-foreign-library libsqlite
@@ -36,7 +36,7 @@
 (defmacro with-ok (expr &body body)
   (alexandria:with-gensyms (g!code)
     `(let ((,g!code ,expr))
-       (if (eq ,g!code %sqlite:+ok+)
+       (if (eq ,g!code %sqlite3:+ok+)
            (progn ,@body)
            (error ,g!code)))))
 
@@ -44,9 +44,9 @@
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
   (cffi:with-foreign-object (handle-ptr '(:pointer *sqlite3))
     (with-slots (filename flags vfs handle) object
-      (let* ((flags (cffi:foreign-bitfield-value '%sqlite:open-flags flags))
-             (result-code (%sqlite:open-v2 filename handle-ptr flags vfs)))
-        (if (eq result-code %sqlite:+ok+)
+      (let* ((flags (cffi:foreign-bitfield-value '%sqlite3:open-flags flags))
+             (result-code (%sqlite3:open-v2 filename handle-ptr flags vfs)))
+        (if (eq result-code %sqlite3:+ok+)
             (setf handle (cffi:mem-ref handle-ptr '(:pointer *sqlite3)))
             (error result-code)))))) ;; FIXME: learn how to use a proper error
 
@@ -59,19 +59,19 @@
 (defun prepare (conn sql)
   (cffi:with-foreign-object (handle-ptr '(:pointer *stmt))
     (with-connection-handle (db conn)
-      (with-ok (%sqlite:prepare-v2 db sql -1 handle-ptr +null-pointer+)
+      (with-ok (%sqlite3:prepare-v2 db sql -1 handle-ptr +null-pointer+)
         (cffi:mem-ref handle-ptr '(:pointer *stmt))))))
 
 
-(defun connect (&key (filename ":memory:") (flags '(:readwrite :create)) (vfs (%sqlite:default-vfs-name)))
+(defun connect (&key (filename ":memory:") (flags '(:readwrite :create)) (vfs (%sqlite3:default-vfs-name)))
   (let ((conn (make-instance 'sqlite-connection :filename filename :flags flags :vfs vfs)))
     conn))
 
 
 (defun disconnect (conn)
   (with-slots (handle) conn
-    (%sqlite:result-code->keyword
-     (%sqlite:close handle))))
+    (%sqlite3:result-code->keyword
+     (%sqlite3:close handle))))
 
 
 (defmacro with-connection ((name path) &body body)

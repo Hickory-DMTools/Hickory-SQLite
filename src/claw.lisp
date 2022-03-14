@@ -34,7 +34,7 @@
                    "^SQLITE_STATIC$"
                    "^SQLITE_TRANSIENT$")
                   (:persistent t :depends-on ()))
-  :in-package :%sqlite
+  :in-package :%sqlite3
   :recognize-strings t
   :inline-functions nil
   :symbolicate-names (:in-pipeline
