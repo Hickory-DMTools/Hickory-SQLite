@@ -26,13 +26,6 @@
       (cffi:use-foreign-library libsqlite)))
 
 
-(defun default-vfs-name ()
-  (let ((ptr (%sqlite:vfs-find +null-pointer+)))
-    (if (cffi:null-pointer-p ptr)
-        (error "Should not be null!!!")
-        (%sqlite:vfs-slot ptr z-name))))
-
-
 (defclass sqlite-connection ()
   ((filename :initarg :filename :reader connection-filename)
    (flags :initarg :flags :reader connection-flags)
@@ -51,12 +44,11 @@
 (defmethod initialize-instance :after ((object sqlite-connection) &key)
   (cffi:with-foreign-object (handle-ptr '(:pointer *sqlite3))
     (with-slots (filename flags vfs handle) object
-      (let* ((vfs-name (or vfs (default-vfs-name)))
-             (result-code (%sqlite:open filename handle-ptr))) ;; FIXME: use open-v2
+      (let* ((flags (cffi:foreign-bitfield-value '%sqlite:open-flags flags))
+             (result-code (%sqlite:open-v2 filename handle-ptr flags vfs)))
         (if (eq result-code %sqlite:+ok+)
-            (setf handle (cffi:mem-ref handle-ptr '(:pointer *sqlite3))
-                  vfs vfs-name)
-            (error result-code))))))
+            (setf handle (cffi:mem-ref handle-ptr '(:pointer *sqlite3)))
+            (error result-code)))))) ;; FIXME: learn how to use a proper error
 
 
 (defmacro with-connection-handle ((name conn) &body body)
@@ -71,7 +63,7 @@
         (cffi:mem-ref handle-ptr '(:pointer *stmt))))))
 
 
-(defun connect (&key (filename ":memory:") (flags '(:readwrite :create)) (vfs nil))
+(defun connect (&key (filename ":memory:") (flags '(:readwrite :create)) (vfs (%sqlite:default-vfs-name)))
   (let ((conn (make-instance 'sqlite-connection :filename filename :flags flags :vfs vfs)))
     conn))
 

@@ -126,6 +126,31 @@
   (:ok-symlink              #.%sqlite:+ok-symlink+))
 
 
+(cffi:defbitfield (%sqlite::open-flags)
+  (:readonly #.%sqlite:+open-readonly+)
+  (:readwrite #.%sqlite:+open-readwrite+)
+  (:create #.%sqlite:+open-create+)
+  (:deleteonclose #.%sqlite:+open-deleteonclose+)
+  (:exclusive #.%sqlite:+open-exclusive+)
+  (:autoproxy #.%sqlite:+open-autoproxy+)
+  (:uri #.%sqlite:+open-uri+)
+  (:memory #.%sqlite:+open-memory+)
+  (:main-db #.%sqlite:+open-main-db+)
+  (:temp-db #.%sqlite:+open-temp-db+)
+  (:transient-db #.%sqlite:+open-transient-db+)
+  (:main-journal #.%sqlite:+open-main-journal+)
+  (:temp-journal #.%sqlite:+open-temp-journal+)
+  (:subjournal #.%sqlite:+open-subjournal+)
+  (:super-journal #.%sqlite:+open-super-journal+)
+  (:nomutex #.%sqlite:+open-nomutex+)
+  (:fullmutex #.%sqlite:+open-fullmutex+)
+  (:sharedcache #.%sqlite:+open-sharedcache+)
+  (:privatecache #.%sqlite:+open-privatecache+)
+  (:wal #.%sqlite:+open-wal+)
+  (:nofollow #.%sqlite:+open-nofollow+)
+  (:exrescode #.%sqlite:+open-exrescode+))
+
+
 (defun %sqlite::result-code->keyword (code)
   (cffi:foreign-enum-keyword '%sqlite::result-code code))
 
@@ -187,9 +212,17 @@
     ',(alexandria:ensure-symbol name :%sqlite)))
 
 
+
+(defun %sqlite::default-vfs-name ()
+  (let ((ptr (%sqlite:vfs-find %sqlite::+null-pointer+)))
+    (unless (cffi:null-pointer-p ptr)
+      (%sqlite::vfs-slot ptr z-name))))
+
+
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (export '%sqlite::result-code :%sqlite)
   (export '%sqlite::extended-code :%sqlite)
+  (export '%sqlite::open-flags :%sqlite)
   (export '%sqlite::result-code->keyword :%sqlite)
   (export '%sqlite::keyword->result-code :%sqlite)
   (export '%sqlite::extended-code->keyword :%sqlite)
@@ -198,4 +231,5 @@
   (export '%sqlite::*sqlite3 :%sqlite)
   (export '%sqlite::*stmt :%sqlite)
   (export '%sqlite::+null-pointer+ :%sqlite)
-  (export '%sqlite::vfs-slot :%sqlite))
+  (export '%sqlite::vfs-slot :%sqlite)
+  (export '%sqlite::default-vfs-name :%sqlite))
