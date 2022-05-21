@@ -244,5 +244,6 @@
    %sqlite3::*sqlite3
    %sqlite3::stmt
    %sqlite3::vfs-slot
-   %sqlite3::default-vfs-name)
+   %sqlite3::default-vfs-name
+   %sqlite3::column-text)
  :%sqlite3)
